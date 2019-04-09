@@ -1,0 +1,42 @@
+version: '3'
+services:
+    rs-lng:
+        image: "rs-lng:8.6"
+        restart: unless-stopped
+        env_file:
+            - .env
+        logging:
+            driver: "json-file"
+            options:
+                max-size: '10m'
+                max-file: '5'
+        ports:
+            - "${WEB_EXTERNAL_PORT:-80}:80"
+        volumes:
+            - ${BASE_PATH:-/data}/www:/var/www/
+            - ${BASE_PATH:-/data}/log/apache2:/var/log/apache2
+        networks:
+            - default
+    db:
+        image: "mysql:5.7"
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: ${MYSQL_DATABASE:-resourcespace}
+            MYSQL_USER: ${MYSQL_USER:-henk}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD:-henk}
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-henk}
+        logging:
+            driver: "json-file"
+            options:
+                max-size: '10m'
+                max-file: '5'
+        networks:
+            - default
+        ports:
+            - "${MYSQL_EXTERNAL_PORT:-3306}:3306"
+        volumes:
+            - ${BASE_PATH:-/data}/mysql/db:/var/lib/mysql
+            - ${BASE_PATH:-/data}/log/mysql:/var/log/mysql
+            - ${BASE_PATH:-/data}/mysql/dump:/tmp
+        healthcheck:
+            test: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e 'connect ${MYSQL_DATABASE:-resourcespace}'
