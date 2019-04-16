@@ -3,20 +3,28 @@ services:
     rs-lng:
         image: "rs-lng:8.6"
         restart: unless-stopped
-        env_file:
-            - .env
+        environment:
+            MYSQL_DATABASE: ${MYSQL_DATABASE:-resourcespace}
+            MYSQL_USER: ${MYSQL_USER:-henk}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD:-henk}
         logging:
             driver: "json-file"
             options:
                 max-size: '10m'
                 max-file: '5'
         ports:
-            - "${WEB_EXTERNAL_PORT:-80}:80"
+            - "${WEB_EXTERNAL_PORT:-8080}:80"
         volumes:
             - ${BASE_PATH:-/data}/www:/var/www/
             - ${BASE_PATH:-/data}/log/apache2:/var/log/apache2
+        labels:
+            - "traefik.backend=naturalis-rs"
+            - "traefik.enable=true"
+            - "traefik.port=80"
+            - "${SITE_URL:-traefik.frontend.rule=Host:rs-test.naturalis.nl}"
         networks:
             - default
+
     db:
         image: "mysql:5.7"
         restart: unless-stopped
@@ -40,3 +48,30 @@ services:
             - ${BASE_PATH:-/data}/mysql/dump:/tmp
         healthcheck:
             test: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e 'connect ${MYSQL_DATABASE:-resourcespace}'
+
+    traefik:
+        image: traefik:1.7.10
+        container_name: traefik
+        restart: unless-stopped
+        ports:
+            - 80:80
+            - 443:443
+            - 8081:8080
+        networks:
+            - default
+            - web
+        logging:
+            driver: "json-file"
+            options:
+                max-size: '10m'
+                max-file: '5'
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - ${BASE_PATH:-/data}/traefiklogs/traefik.log:/var/log/traefik.log
+            - ${TRAEFIK_TOML_FILE:-./traefik.toml}:/traefik.toml
+            - ${CERTDIR:-/etc/letsencrypt}:/etc/letsencrypt
+
+networks:
+    default:
+    web:
+        external: true
