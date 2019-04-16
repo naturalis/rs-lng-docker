@@ -1,7 +1,7 @@
 version: '3'
 services:
     rs-lng:
-        image: "rs-lng:8.6"
+        image: "naturalis/rs-lng:8.6"
         restart: unless-stopped
         environment:
             MYSQL_DATABASE: ${MYSQL_DATABASE:-resourcespace}
