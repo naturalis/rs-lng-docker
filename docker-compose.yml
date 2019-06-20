@@ -1,4 +1,12 @@
-version: '3'
+version: '3.4'
+
+x-logging:
+  &default-logging
+  options:
+    max-size: '10m'
+    max-file: '5'
+  driver: json-file
+
 services:
     rs-lng:
         image: "naturalis/rs-lng:8.6"
@@ -7,11 +15,7 @@ services:
             MYSQL_DATABASE: ${MYSQL_DATABASE:-resourcespace}
             MYSQL_USER: ${MYSQL_USER:-henk}
             MYSQL_PASSWORD: ${MYSQL_PASSWORD:-henk}
-        logging:
-            driver: "json-file"
-            options:
-                max-size: '10m'
-                max-file: '5'
+        logging: *default-logging
         ports:
             - "${WEB_EXTERNAL_PORT:-8080}:80"
         volumes:
@@ -33,11 +37,7 @@ services:
             MYSQL_USER: ${MYSQL_USER:-henk}
             MYSQL_PASSWORD: ${MYSQL_PASSWORD:-henk}
             MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-henk}
-        logging:
-            driver: "json-file"
-            options:
-                max-size: '10m'
-                max-file: '5'
+        logging: *default-logging
         networks:
             - default
         ports:
@@ -50,7 +50,7 @@ services:
             test: mysql --user=root --password=${MYSQL_ROOT_PASSWORD} -e 'connect ${MYSQL_DATABASE:-resourcespace}'
 
     traefik:
-        image: traefik:1.7.10
+        image: traefik:1.7.12
         container_name: traefik
         restart: unless-stopped
         ports:
@@ -60,14 +60,9 @@ services:
         networks:
             - default
             - web
-        logging:
-            driver: "json-file"
-            options:
-                max-size: '10m'
-                max-file: '5'
+        logging: *default-logging
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
-            - ${BASE_PATH:-/data}/traefiklogs/traefik.log:/var/log/traefik.log
             - ${TRAEFIK_TOML_FILE:-./traefik.toml}:/traefik.toml
             - ${CERTDIR:-/etc/letsencrypt}:/etc/letsencrypt
 
